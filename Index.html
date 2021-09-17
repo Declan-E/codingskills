@@ -1,7 +1,9 @@
 <html>
 	<head>
+		<script type="text/javascript" src="index.js"></script>
 	</head>
 	<body>
-		<p>Test</p>
+		<label for="selectFiles">Select files for import:</label>
+		<input id="selectFiles" type="file" multiple="multiple" onchange="importFiles(this)">
 	</body>
 </html>
