@@ -7,10 +7,24 @@ var suppliers = [];
 //Import CSVs from user selection
 //fileList - HTML input element, contains files
 function importFiles(fileList) {
+	popAll(); //Clear local memory
 	for (var i = 0; i < fileList.files.length; i++) {
 		if (fileList.files[i].name.split('.')[1] != 'csv') break; //Exit if file does not have csv extension
 		
 		parseInputFile(fileList.files[i]);
+	}
+}
+
+//Pops all barcodes, catalogs, and suppliers from their arrays
+function popAll() {
+	while (barcodes.length > 0) {
+		barcodes.pop();
+	}
+	while (catalogs.length > 0) {
+		catalogs.pop();
+	}
+	while (suppliers.length > 0) {
+		suppliers.pop();
 	}
 }
 
@@ -23,7 +37,6 @@ function parseInputFile(file) {
 	
 	//When reader is ready
 	reader.onload = function() {
-		//const car = {type:"Fiat", model:"500", color:"white"};
 		var lines = reader.result.split('\r\n');
 		// First line is always headers
 		switch(lines[0]) {
@@ -49,7 +62,7 @@ function parseInputFile(file) {
 	};
 }
 
-//import given lines into barcodes objects
+//Import given lines into barcodes objects
 //fileLines - Array of lines imported for file (string array)
 function importBarcodes(fileLines) {
 	//SupplierID,SKU,Barcode
@@ -61,7 +74,7 @@ function importBarcodes(fileLines) {
 	}
 }
 
-//import given lines into catalogs objects
+//Import given lines into catalogs objects
 //fileLines - Array of lines imported for file (string array)
 function importCatalogs(fileLines) {
 	//SKU,Description
@@ -73,7 +86,7 @@ function importCatalogs(fileLines) {
 	}
 }
 
-//import given lines into suppliers objects
+//Import given lines into suppliers objects
 //fileLines - Array of lines imported for file (string array)
 function importSuppliers(fileLines) {
 	//ID,Name
@@ -83,4 +96,9 @@ function importSuppliers(fileLines) {
 		var newSupplier = {ID:supplierData[0], Name:supplierData[1]};
 		suppliers.push(newSupplier);
 	}
+}
+
+//Generate output catalog and save as CSV to output folder
+function generateOutputFile() {
+	
 }
