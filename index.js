@@ -100,5 +100,9 @@ function importSuppliers(fileLines) {
 
 //Generate output catalog and save as CSV to output folder
 function generateOutputFile() {
-	
+	//Alert user if files have not been uploaded - expects at least 1 barcode, catalog, and supplier
+	if (barcodes.length < 1 || catalogs.length < 1 || suppliers.length < 1( {
+		alert("At least one barcode, catalog, and supplier are expected. Please check the input files and try again.");
+		return 0; //Unsuccessful
+	}
 }
