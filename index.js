@@ -98,7 +98,7 @@ function importSuppliers(fileLines) {
 	}
 }
 
-//Generate output catalog and save as CSV to output folder
+//Generate output catalog and save
 function generateOutputFile() {
 	//Alert user if files have not been uploaded - expects at least 1 barcode, catalog, and supplier
 	if (barcodes.length < 1 || catalogs.length < 1 || suppliers.length < 1) {
@@ -107,6 +107,23 @@ function generateOutputFile() {
 	}
 	cleanCatalog = removeDuplicateCatalogItems(catalogs);
 	
+	//Format CSV array
+	var csvOutput = "SKU,Description\r\n";
+	for (var i = 0; i < cleanCatalog.length; i++) {
+		csvOutput += cleanCatalog[i].SKU + ',' + cleanCatalog[i].Description;
+		if (i < cleanCatalog.length - 1) { //Ingore newline for last item
+			csvOutput += '\r\n';
+		}
+	}
+	
+	//Create CSV file and open download dialog
+	let csvFile = new Blob([csvOutput], {type: 'text/csv'});
+	var a = document.createElement('a');
+	a.download = 'Merged Catalogs.csv'; //File name
+	a.href = window.URL.createObjectURL(csvFile);
+	a.textContent = 'Download CSV';
+	a.dataset.downloadurl = ['text/csv', a.download, a.href].join(':');
+	a.click(); //Trigger download by programmatically clicking download link
 }
 
 //Compare barcodes from all catalog items. Remove duplicates. Does not overwrite global catalogs array
@@ -125,6 +142,5 @@ function removeDuplicateCatalogItems(catalog) {
 		}
 		duplicateCount = 0;
 	}
-	console.log(processedCatalogs); //Debug
 	return processedCatalogs
 }
