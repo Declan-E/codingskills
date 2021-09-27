@@ -101,8 +101,30 @@ function importSuppliers(fileLines) {
 //Generate output catalog and save as CSV to output folder
 function generateOutputFile() {
 	//Alert user if files have not been uploaded - expects at least 1 barcode, catalog, and supplier
-	if (barcodes.length < 1 || catalogs.length < 1 || suppliers.length < 1( {
+	if (barcodes.length < 1 || catalogs.length < 1 || suppliers.length < 1) {
 		alert("At least one barcode, catalog, and supplier are expected. Please check the input files and try again.");
 		return 0; //Unsuccessful
 	}
+	cleanCatalog = removeDuplicateCatalogItems(catalogs);
+	
+}
+
+//Compare barcodes from all catalog items. Remove duplicates. Does not overwrite global catalogs array
+//catalogs - Array of catalog items to be processed. No headers
+function removeDuplicateCatalogItems(catalog) {
+	var processedCatalogs = catalog; //Temp array so array is not altered during loops
+	var duplicateCount = 0; //
+	for (var i = 0; i < catalogs.length; i++) {
+		for (var j = 0; j < catalogs.length; j++) { //Start after the compared catalog item, i+1. Avoids removing the original and cuts loop time
+			if (catalogs[i].SKU == catalogs[j].SKU) {
+				duplicateCount += 1;
+				if (duplicateCount > 1) {
+					processedCatalogs.splice(j,1);
+				}
+			}
+		}
+		duplicateCount = 0;
+	}
+	console.log(processedCatalogs); //Debug
+	return processedCatalogs
 }
