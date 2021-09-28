@@ -1,7 +1,7 @@
 //Global lists of imported objects
 //In a larger system these would be encapsulated
 var barcodes = [];
-var catalogs = [];
+var items = [];
 var suppliers = [];
 
 //Import CSVs from user selection
@@ -9,10 +9,12 @@ var suppliers = [];
 function importFiles(fileList) {
 	//Clear local memory
 	barcodes = [];
-	catalogs = [];
+	items = [];
 	suppliers = [];
 	for (var i = 0; i < fileList.files.length; i++) {
-		if (fileList.files[i].name.split('.')[1] != 'csv') break; //Exit if file does not have csv extension
+		if (fileList.files[i].name.split('.')[1] != 'csv') {
+			alert("Incorrect file type"); //Exit if file does not have csv extension
+		}
 		
 		parseInputFile(fileList.files[i]);
 	}
@@ -29,62 +31,85 @@ function parseInputFile(file) {
 	reader.onload = function() {
 		var lines = reader.result.split('\r\n');
 		// First line is always headers
-		//TODO: Add company names to objects
 		switch(lines[0]) {
 			case "SupplierID,SKU,Barcode":
 				// Barcode
-				importBarcodes(lines);
+				importBarcodes(lines, file.name);
 				break;
 			case "SKU,Description":
 				// Catalog
-				importCatalogs(lines);
+				importCatalog(lines, file.name);
 				break;
 			case "ID,Name":
 				// Supplier
-				importSuppliers(lines);
+				importSuppliers(lines, file.name);
 				break;
 			default:
-				// code block
+				alert("Unreadable file. Please ensure the file you uploaded is correct.");
 }
 		
 	};
     reader.onerror = function() {
-		console.log(reader.error); //Log error code to console
+		alert("Unreadable file. Please ensure the file you uploaded is correct.");
 	};
 }
 
 //Import given lines into barcodes objects
 //****fileLines - Array of lines imported for file (string array)
-function importBarcodes(fileLines) {
-	//SupplierID,SKU,Barcode
+//****fileName  - Name of file with extension. Naming convention assumes "barcodes"+company_name+".csv"
+function importBarcodes(fileLines, fileName) {
+	//Verify file name & get company name
+	var company = '';
+	company = fileName.split('.')[0]; //Remove extension
+	company = company.split("barcodes")[1]; //Assume file name follows convention
+	if (company == undefined) {
+		alert("Unreadable file. Please ensure the file you uploaded is correct.");
+	}
+	//SupplierID,SKU,Barcode,Company
 	for (var i=1; i < fileLines.length; i++) { //Exclude header line 0
 		if (fileLines[i] == '') return; //Account for empty trailing line
 		var barcodeData = fileLines[i].split(',');
-		var newBarcode = {supplierID:barcodeData[0], SKU:barcodeData[1], Barcode:barcodeData[2]}; //TODO: Company name
+		var newBarcode = {supplierID:barcodeData[0], SKU:barcodeData[1], Barcode:barcodeData[2], Company:company};
 		barcodes.push(newBarcode);
 	}
 }
 
 //Import given lines into catalogs objects
 //****fileLines - Array of lines imported for file (string array)
-function importCatalogs(fileLines) {
-	//SKU,Description
+//****fileName  - Name of file with extension. Naming convention assumes "catalog"+company_name+".csv"
+function importCatalog(fileLines, fileName) {
+	//Verify file name & get company name
+	var company = '';
+	company = fileName.split('.')[0]; //Remove extension
+	company = company.split("catalog")[1]; //Assume file name follows convention
+	if (company == undefined) {
+		alert("Unreadable file. Please ensure the file you uploaded is correct.");
+	}
+	//SKU,Description,Company
 	for (var i=1; i < fileLines.length; i++) { //Exclude header line 0
 		if (fileLines[i] == '') return; //Account for empty trailing line
 		var catalogData = fileLines[i].split(',');
-		var newCatalog = {SKU:catalogData[0], Description:catalogData[1]}; //TODO: Company name
-		catalogs.push(newCatalog);
+		var newItem = {SKU:catalogData[0], Description:catalogData[1], Company:company};
+		items.push(newItem);
 	}
 }
 
 //Import given lines into suppliers objects
 //****fileLines - Array of lines imported for file (string array)
-function importSuppliers(fileLines) {
-	//ID,Name
+//****fileName  - Name of file with extension. Naming convention assumes "supplier"+company_name+".csv"
+function importSuppliers(fileLines,fileName) {
+	//Verify file name & get company name
+	var company = '';
+	company = fileName.split('.')[0]; //Remove extension
+	company = company.split("supplier")[1]; //Assume file name follows convention
+	if (company == undefined) {
+		alert("Unreadable file. Please ensure the file you uploaded is correct.");
+	}
+	//ID,Name,Company
 	for (var i=1; i < fileLines.length; i++) { //Exclude header line 0
 		if (fileLines[i] == '') return; //Account for empty trailing line
 		var supplierData = fileLines[i].split(',');
-		var newSupplier = {ID:supplierData[0], Name:supplierData[1]}; //TODO: Company name
+		var newSupplier = {ID:supplierData[0], Name:supplierData[1], Company:company};
 		suppliers.push(newSupplier);
 	}
 }
@@ -92,18 +117,18 @@ function importSuppliers(fileLines) {
 //Generate output catalog and save
 function generateOutputFile() {
 	//Alert user if files have not been uploaded - expects at least 1 barcode, catalog, and supplier
-	if (barcodes.length < 1 || catalogs.length < 1 || suppliers.length < 1) {
+	if (barcodes.length < 1 || items.length < 1 || suppliers.length < 1) {
 		alert("At least one barcode, catalog, and supplier are expected. Please check the input files and try again.");
 		return 0; //Unsuccessful
 	}
-	cleanCatalog = removeDuplicateCatalogItems(catalogs);
-	outputCatalog = addSupplierIDs(cleanCatalog);
+	cleanCatalog = removeDuplicateCatalogItems(items);
+	outputCatalog = addSuppCompInfo(cleanCatalog);
 	
 	//Format CSV array
-	var csvOutput = "SKU,Description\r\n";
-	for (var i = 0; i < cleanCatalog.length; i++) {
-		csvOutput += cleanCatalog[i].SKU + ',' + cleanCatalog[i].Description;
-		if (i < cleanCatalog.length - 1) { //Ingore newline for last item
+	var csvOutput = "SKU,Description,Suppliers,Companies\r\n";
+	for (var i = 0; i < outputCatalog.length; i++) {
+		csvOutput += outputCatalog[i].SKU + ',' + outputCatalog[i].Description + ',' + outputCatalog[i].supplier + ',' + outputCatalog[i].Companies; //TODO: Add companies
+		if (i < outputCatalog.length - 1) { //Ingore newline for last item
 			csvOutput += '\r\n';
 		}
 	}
@@ -121,23 +146,25 @@ function generateOutputFile() {
 //Compare barcodes from all catalog items. Remove duplicates. Does not overwrite global catalogs array
 //****catalogs - Array of catalog items to be processed. No headers
 function removeDuplicateCatalogItems(catalog) {
-	var processedCatalogs = catalog; //Temp array so array is not altered during loops
+	var processedCatalog = catalog; //Temp array so array is not altered during loops
 	var duplicateCount = 0;
-	for (var i = 0; i < catalogs.length; i++) {
-		for (var j = 0; j < catalogs.length; j++) { //Start after the compared catalog item, i+1. Avoids removing the original and cuts loop time
-			if (catalogs[i].SKU == catalogs[j].SKU) {
+	for (var i = 0; i < items.length; i++) {
+		for (var j = 0; j < items.length; j++) { //Start after the compared catalog item, i+1. Avoids removing the original and cuts loop time
+			if (items[i].SKU == items[j].SKU) {
 				duplicateCount += 1;
 				if (duplicateCount > 1) {
-					processedCatalogs.splice(j,1);
+					processedCatalog[i].Company = processedCatalog[i].Company+'|'+processedCatalog[j].Company; //List both companies delimited
+					processedCatalog.splice(j,1);
 				}
 			}
+			//TODO: Compare items to look for duplicates - duplicate name and supplier means same item even if different barcode (assumption). Different names means different items every time
 		}
 		duplicateCount = 0;
 	}
-	return processedCatalogs
+	return processedCatalog
 }
 
-//Returns an object for output with delimited suppliers added to the catalog item
+//Returns an object for output with delimited suppliers and companies added to the catalog item
 //Note supplier IDs are found in barcodes objects
 //****catalog - catalog to use as base for new objects
 function addSuppCompInfo(catalog) {
@@ -145,9 +172,8 @@ function addSuppCompInfo(catalog) {
 	var supplierCount = 0;
 	var arrSuppliers = [];
 	var strSuppliers = '';
-	debugger;
 	for (var i = 0; i < catalog.length; i++) {
-		//SKU,Description,Suppliers
+		//SKU,Description,Suppliers,Companies
 		//Check for suppliers
 		for (var j = 0; j < barcodes.length; j++) {
 			if (catalog[i].SKU == barcodes[j].SKU) {
@@ -162,7 +188,7 @@ function addSuppCompInfo(catalog) {
 				strSuppliers =+ '|'; Delimiter
 			}
 		}
-		var newCatalogItem = {SKU:catalog[i].SKU, Description:catalog[i].Description, Suppliers:strSuppliers}; //TODO: Company name
+		var newCatalogItem = {SKU:catalog[i].SKU, Description:catalog[i].Description, Suppliers:strSuppliers, Companies:catalog[i].Company};
 		outputCatalog.push(newCatalogItem);
 		arrSuppliers = [];
 		strSuppliers = '';
