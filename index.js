@@ -121,8 +121,9 @@ function generateOutputFile() {
 		alert("At least one barcode, catalog, and supplier are expected. Please check the input files and try again.");
 		return 0; //Unsuccessful
 	}
-	cleanCatalog = removeDuplicateCatalogItems(items);
-	outputCatalog = addSuppCompInfo(cleanCatalog);
+	cleanCatalog = removeDuplicateCatalogItems(items); //Remove duplicate items based on SKU
+	outputCatalog = addSupplier(cleanCatalog); // Add supplier ID to item
+	outputCatalog = removeDuplicateSupplierItems(outputCatalog); //Remove duplicate items based on description and supplier
 	
 	//Format CSV array
 	var csvOutput = "SKU,Description,Suppliers,Companies\r\n";
@@ -144,20 +145,19 @@ function generateOutputFile() {
 }
 
 //Compare barcodes from all catalog items. Remove duplicates. Does not overwrite global catalogs array
-//****catalogs - Array of catalog items to be processed. No headers
+//****catalog - Array of catalog items to be processed. No headers
 function removeDuplicateCatalogItems(catalog) {
 	var processedCatalog = catalog; //Temp array so array is not altered during loops
 	var duplicateCount = 0;
-	for (var i = 0; i < items.length; i++) {
-		for (var j = 0; j < items.length; j++) { //Start after the compared catalog item, i+1. Avoids removing the original and cuts loop time
-			if (items[i].SKU == items[j].SKU) {
+	for (var i = 0; i < catalog.length; i++) {
+		for (var j = 0; j < catalog.length; j++) { //Start after the compared catalog item, i+1. Avoids removing the original and cuts loop time
+			if (catalog[i].SKU == catalog[j].SKU) {
 				duplicateCount += 1;
 				if (duplicateCount > 1) {
 					processedCatalog[i].Company = processedCatalog[i].Company+'|'+processedCatalog[j].Company; //List both companies delimited
-					processedCatalog.splice(j,1);
+					processedCatalog.splice(processedCatalog.indexOf(catalog[j]),1);
 				}
 			}
-			//TODO: Compare items to look for duplicates - duplicate name and supplier means same item even if different barcode (assumption). Different names means different items every time
 		}
 		duplicateCount = 0;
 	}
@@ -167,7 +167,7 @@ function removeDuplicateCatalogItems(catalog) {
 //Returns an object for output with delimited suppliers and companies added to the catalog item
 //Note supplier IDs are found in barcodes objects
 //****catalog - catalog to use as base for new objects
-function addSuppCompInfo(catalog) {
+function addSupplier(catalog) {
 	var outputCatalog = [];
 	var supplierCount = 0;
 	var arrSuppliers = [];
@@ -193,5 +193,14 @@ function addSuppCompInfo(catalog) {
 		arrSuppliers = [];
 		strSuppliers = '';
 	}
+	console.log(outputCatalog);
+	return outputCatalog;
+}
+
+//Compare items to look for duplicates - duplicate name and supplier means same item even if different barcode (assumption). Different names means different items every time
+//****catalog - catalog to use as base for new objects
+function removeDuplicateSupplierItems(catalog) {
+	var outputCatalog = [];
+	//TODO
 	return outputCatalog;
 }
