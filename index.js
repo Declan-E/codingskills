@@ -128,7 +128,7 @@ function generateOutputFile() {
 	//Format CSV array
 	var csvOutput = "SKU,Description,Suppliers,Companies\r\n";
 	for (var i = 0; i < outputCatalog.length; i++) {
-		csvOutput += outputCatalog[i].SKU + ',' + outputCatalog[i].Description + ',' + outputCatalog[i].supplier + ',' + outputCatalog[i].Companies; //TODO: Add companies
+		csvOutput += outputCatalog[i].SKU + ',' + outputCatalog[i].Description + ',' + outputCatalog[i].Suppliers + ',' + outputCatalog[i].Companies; //TODO: Add companies
 		if (i < outputCatalog.length - 1) { //Ingore newline for last item
 			csvOutput += '\r\n';
 		}
@@ -193,7 +193,6 @@ function addSupplier(catalog) {
 		arrSuppliers = [];
 		strSuppliers = '';
 	}
-	console.log(outputCatalog);
 	return outputCatalog;
 }
 
@@ -201,6 +200,46 @@ function addSupplier(catalog) {
 //****catalog - catalog to use as base for new objects
 function removeDuplicateSupplierItems(catalog) {
 	var outputCatalog = [];
-	//TODO
+	var currItem = catalog[0];
+	var removedItems = []; //Keep track of what has been removed
+	console.log(catalog); //Debug
+	//SKU, Description, Suppliers, Companies
+	for (var i = 0; i < catalog.length; i++) {
+		currItem = catalog[i];
+		for (var j = 0; j < catalog.length; j++) {
+			if (i == j) { //Same item
+				j++;
+				if (j => catalog.length) { // j is outside array bounds
+					break;
+				}
+			}
+			if (catalog[i].Description == catalog[j].Description && catalog[i].Suppliers == catalog[j].Suppliers) {
+				debugger; //TODO - undefined values still appearing, duplicates not being correctly removed
+				//Assume same item
+				var mergedSKU = catalog[i].SKU;
+				if (catalog[i].SKU != catalog[j].SKU) {
+					mergedSKU = catalog[i].SKU + '|' + catalog[j].SKU;
+				}
+				//Check for duplicate companies
+				var allCompStr = catalog[i].Companies + '|' + catalog[j].Companies;
+				var allCompArr = allCompStr.split('|');
+				var seenCompanies = [];
+				var finalCompaniesList = '';
+
+				for (var iComp = 0; iComp < allCompArr.length; iComp++){
+					if (!seenCompanies.includes(allCompArr[iComp])) {
+						finalCompaniesList += allCompArr[iComp] + '|';
+						seenCompanies.push(allCompArr[iComp]);
+					}
+				}
+				finalCompaniesList = finalCompaniesList.slice(0,-1); // Remove trailing '|'
+				removedItems.push(catalog[j]); // So it is not added to final array
+			}
+		}
+		if (!removedItems.includes(catalog[i])) {
+			var newCatalogItem = {SKU:mergedSKU, Description:catalog[i].Description, Suppliers:catalog[i].Suppliers, Companies:finalCompaniesList};
+			outputCatalog.push(newCatalogItem);
+		}
+	}
 	return outputCatalog;
 }
