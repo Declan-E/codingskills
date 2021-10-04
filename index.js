@@ -1,5 +1,4 @@
-//Global lists of imported objects
-//In a larger system these would be encapsulated
+//Global lists of imported CSV entries as objects
 var barcodes = [];
 var items = [];
 var suppliers = [];
@@ -13,9 +12,8 @@ function importFiles(fileList) {
 	suppliers = [];
 	for (var i = 0; i < fileList.files.length; i++) {
 		if (fileList.files[i].name.split('.')[1] != 'csv') {
-			alert("Incorrect file type"); //Exit if file does not have csv extension
+			alert("Incorrect file type"); //Exit if file does not have csv extension (file integrity is assumed)
 		}
-		
 		parseInputFile(fileList.files[i]);
 	}
 }
@@ -46,8 +44,7 @@ function parseInputFile(file) {
 				break;
 			default:
 				alert("Unreadable file. Please ensure the file you uploaded is correct.");
-}
-		
+		}	
 	};
     reader.onerror = function() {
 		alert("Unreadable file. Please ensure the file you uploaded is correct.");
@@ -122,13 +119,13 @@ function generateOutputFile() {
 		return 0; //Unsuccessful
 	}
 	cleanCatalog = removeDuplicateCatalogItems(items); //Remove duplicate items based on SKU
-	outputCatalog = addSupplier(cleanCatalog); // Add supplier ID to item
+	outputCatalog = addSupplier(cleanCatalog); //Add supplier ID to item
 	outputCatalog = removeDuplicateSupplierItems(outputCatalog); //Remove duplicate items based on description and supplier
 	
 	//Format CSV array
 	var csvOutput = "SKU,Description,Suppliers,Companies\r\n";
 	for (var i = 0; i < outputCatalog.length; i++) {
-		csvOutput += outputCatalog[i].SKU + ',' + outputCatalog[i].Description + ',' + outputCatalog[i].Suppliers + ',' + outputCatalog[i].Companies; //TODO: Add companies
+		csvOutput += outputCatalog[i].SKU + ',' + outputCatalog[i].Description + ',' + outputCatalog[i].Suppliers + ',' + outputCatalog[i].Companies;
 		if (i < outputCatalog.length - 1) { //Ingore newline for last item
 			csvOutput += '\r\n';
 		}
@@ -150,7 +147,7 @@ function removeDuplicateCatalogItems(catalog) {
 	var processedCatalog = catalog; //Temp array so array is not altered during loops
 	var duplicateCount = 0;
 	for (var i = 0; i < catalog.length; i++) {
-		for (var j = 0; j < catalog.length; j++) { //Start after the compared catalog item, i+1. Avoids removing the original and cuts loop time
+		for (var j = 0; j < catalog.length; j++) {
 			if (catalog[i].SKU == catalog[j].SKU) {
 				duplicateCount += 1;
 				if (duplicateCount > 1) {
@@ -185,7 +182,7 @@ function addSupplier(catalog) {
 		for (var k = 0; k < arrSuppliers.length; k++) {
 			strSuppliers += arrSuppliers[k];
 			if (k < arrSuppliers.length-1) {
-				strSuppliers =+ '|'; Delimiter
+				strSuppliers =+ '|'; //Delimiter
 			}
 		}
 		var newCatalogItem = {SKU:catalog[i].SKU, Description:catalog[i].Description, Suppliers:strSuppliers, Companies:catalog[i].Company};
@@ -200,22 +197,23 @@ function addSupplier(catalog) {
 //****catalog - catalog to use as base for new objects
 function removeDuplicateSupplierItems(catalog) {
 	var outputCatalog = [];
-	var currItem = catalog[0];
-	var removedItems = []; //Keep track of what has been removed
-	console.log(catalog); //Debug
+	var addFlag = false; //If true, add to the output
+	var sameItem = false; //Duplicates should not be compared if they are identical
+	var duplicateEntries = []; //Array of indexes of duplicate items not to be added
 	//SKU, Description, Suppliers, Companies
 	for (var i = 0; i < catalog.length; i++) {
-		currItem = catalog[i];
+		while (duplicateEntries.indexOf(i) >= 0) {
+			i++
+		}
+		if (i >= catalog.length) { //Outside of array bounds
+			break;
+		}
 		for (var j = 0; j < catalog.length; j++) {
-			if (i == j) { //Same item
-				j++;
-				if (j => catalog.length) { // j is outside array bounds
-					break;
-				}
+			if (catalog[i] == catalog[j]) {
+				sameItem = true;
 			}
-			if (catalog[i].Description == catalog[j].Description && catalog[i].Suppliers == catalog[j].Suppliers) {
-				debugger; //TODO - undefined values still appearing, duplicates not being correctly removed
-				//Assume same item
+			if (catalog[i].Description == catalog[j].Description && catalog[i].Suppliers == catalog[j].Suppliers && !sameItem) {
+				//Description and supplier are identical = assume same item
 				var mergedSKU = catalog[i].SKU;
 				if (catalog[i].SKU != catalog[j].SKU) {
 					mergedSKU = catalog[i].SKU + '|' + catalog[j].SKU;
@@ -233,12 +231,18 @@ function removeDuplicateSupplierItems(catalog) {
 					}
 				}
 				finalCompaniesList = finalCompaniesList.slice(0,-1); // Remove trailing '|'
-				removedItems.push(catalog[j]); // So it is not added to final array
+				addFlag = true; // Add to final array
+				duplicateEntries.push(j); //So the other instance of this item is not added also
 			}
+			sameItem = false;
 		}
-		if (!removedItems.includes(catalog[i])) {
+		if (!addFlag) { // No duplicates found, add original item
+			outputCatalog.push(catalog[i]);
+		}
+		if (addFlag) { // Add merged items
 			var newCatalogItem = {SKU:mergedSKU, Description:catalog[i].Description, Suppliers:catalog[i].Suppliers, Companies:finalCompaniesList};
 			outputCatalog.push(newCatalogItem);
+			addFlag = false;
 		}
 	}
 	return outputCatalog;
