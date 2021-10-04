@@ -1,3 +1,27 @@
+# Coding Skills Challenge - Declan English
+
+This is my take on the coding skills challenge using Javascript via a local HTML interface.
+
+## Using The Program
+1. Run Index.html locally from the codingskills file.
+2. Click the "Choose files" button to select the appropriate .csv files for input.
+	- Note that at least one barcodes, catalog, and suppliers file is expected.\*
+3. Click the "Generate catalog file" button to create an output .csv file with merged catalogs.
+	- This CSV file will have the following header row: SKU,Description,Suppliers,Companies.
+	- Any catalog items with multiple entries under these headers will have entries delimited by a pipe (|). For example, an item which appears on catalogs for both company A and company B will have a "Companies" column entry of "A|B".
+	
+\*These files should follow the appropriate naming convention as demonstrated by the files in the Input folder in this repo, including the file type (barcodes, catalog, or suppliers)the company name. For example, the suppliersfile for company A should be named suppliersA.csv
+	
+## Assumptions
+The following assumptions have been made in the development of this program:
+ - Items with the same SKU are identical
+ - Items with the same description and supplier are identical
+ - Files will be named following the naming convention as demonstrated by the files in the Input folder
+ Further assumptions may have been made during the development of this program with the output requirements taken into account.
+ 
+~~~~~~
+Below is the original content of the Coding Skills README file.
+
 # Coding Skills Challenge
 
 ### The below describes a problem statement, make sure to read all the instructions in this readme before you start.
